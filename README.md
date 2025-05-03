@@ -44,3 +44,12 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+
+## 프로젝트 구조
+
+- src/ 디렉토리 내에 다음과 같은 주요 폴더들이 있습니다:
+    - components/: 재사용 가능한 UI 컴포넌트들을 위한 폴더
+    - pages/: 각 페이지 컴포넌트들을 위한 폴더
+    - services/: API 호출과 같은 서비스 로직을 위한 폴더
+    - types/: TypeScript 타입 정의를 위한 폴더
