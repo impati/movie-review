@@ -15,6 +15,7 @@ export interface Movie {
   movieName: string;
   director: string;
   actors: string[];
+  poster: string;
   detail: MovieDetail;
 }
 
@@ -22,6 +23,7 @@ export interface CreateMovieRequest {
   movieName: string;
   director: string;
   actors: string[];
+  poster: string;
   detail: MovieDetail;
 }
 
@@ -38,4 +40,13 @@ export const getMovieById = async (movieId: string): Promise<Movie> => {
 export const createMovie = async (movie: CreateMovieRequest): Promise<Movie> => {
   const response = await axios.post(`${API_BASE_URL}/v1/movies`, movie);
   return response.data;
+};
+
+export const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await axios.post(`${API_BASE_URL}/v1/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data.url;
 }; 
