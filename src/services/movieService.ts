@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://review.impati.net:8080';
+const API_BASE_URL = 'http://review.impati.net';
 
 export interface MovieDetail {
   open: string;
