@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import UserMoviePage from './pages/UserMoviePage';
 import HomePage from './pages/HomePage';
 import MovieDetailPage from './pages/MovieDetailPage';
+import UserMovieDetailPage from './pages/UserMovieDetailPage';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -17,8 +19,10 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/movie/:movieId" element={<MovieDetailPage />} />
+          <Route path="/" element={<UserMoviePage />} />
+          <Route path="/user-movie/:movieId" element={<UserMovieDetailPage />} />
+          <Route path="/admin" element={<HomePage />} />
+          <Route path="/admin/movie/:movieId" element={<MovieDetailPage />} />
         </Routes>
       </Router>
     </ThemeProvider>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getMovieById, Movie } from '../services/movieService';
+import { getUserMovieById, Movie } from '../services/movieService';
 import { Container, Box, Typography, Chip, Stack, Button, CircularProgress, Paper, Fade } from '@mui/material';
 
-const MovieDetailPage: React.FC = () => {
+const UserMovieDetailPage: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
   const navigate = useNavigate();
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -14,7 +14,7 @@ const MovieDetailPage: React.FC = () => {
     const fetchMovie = async () => {
       setLoading(true);
       try {
-        const data = await getMovieById(movieId);
+        const data = await getUserMovieById(movieId);
         setMovie(data);
       } catch (e) {
         alert('영화 정보를 불러오지 못했습니다.');
@@ -96,7 +96,7 @@ const MovieDetailPage: React.FC = () => {
           </Paper>
         </Box>
         <Box mt={5}>
-          <Button variant="outlined" size="large" sx={{ borderRadius: 2, px: 4, fontWeight: 600 }} onClick={() => navigate('/admin')}>
+          <Button variant="outlined" size="large" sx={{ borderRadius: 2, px: 4, fontWeight: 600 }} onClick={() => navigate(-1)}>
             목록으로 돌아가기
           </Button>
         </Box>
@@ -105,4 +105,4 @@ const MovieDetailPage: React.FC = () => {
   );
 };
 
-export default MovieDetailPage; 
+export default UserMovieDetailPage; 

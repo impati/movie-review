@@ -306,7 +306,7 @@ const HomePage: React.FC = () => {
                     overflow: 'hidden',
                   }}
                 >
-                  <MovieCard movie={movie} onClick={() => navigate(`/movie/${movie.movieId}`)} />
+                  <MovieCard movie={movie} onClick={() => navigate(`/admin/movie/${movie.movieId}`)} />
                 </Paper>
               ))}
             </Box>
