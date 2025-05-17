@@ -4,6 +4,7 @@ import UserMoviePage from './pages/UserMoviePage';
 import HomePage from './pages/HomePage';
 import MovieDetailPage from './pages/MovieDetailPage';
 import UserMovieDetailPage from './pages/UserMovieDetailPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/user-movie/:movieId" element={<UserMovieDetailPage />} />
           <Route path="/admin" element={<HomePage />} />
           <Route path="/admin/movie/:movieId" element={<MovieDetailPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>
       </Router>
     </ThemeProvider>
