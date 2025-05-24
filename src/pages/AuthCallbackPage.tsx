@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://review.impati.net';
+import { getApiUrl } from '../config/api';
 
 const AuthCallbackPage = () => {
   const location = useLocation();
@@ -13,7 +12,7 @@ const AuthCallbackPage = () => {
     const token = params.get('token');
     if (token) {
       localStorage.setItem('token', token);
-      axios.get(`${API_BASE_URL}/v1/members?token=${token}`)
+      axios.get(`${getApiUrl()}/v1/members?token=${token}`)
         .then(res => {
           localStorage.setItem('user', JSON.stringify(res.data));
           navigate('/');

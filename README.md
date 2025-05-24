@@ -1,3 +1,59 @@
+# Movie Review
+
+영화 리뷰 서비스입니다.
+
+## 환경 설정
+
+### 1. 환경 변수 설정
+
+프로젝트 루트 디렉토리에 `.env` 파일을 생성하고 다음과 같이 설정합니다:
+
+```bash
+# 프로덕션 환경 (기본값)
+REACT_APP_API_URL=http://review.impati.net
+
+# 로컬 개발 환경 (.env.local)
+REACT_APP_API_URL=http://localhost:8080
+```
+
+### 2. 환경별 실행 방법
+
+#### 로컬 개발 환경에서 실행
+```bash
+# .env.local 파일이 있는 경우 자동으로 로컬 환경 설정을 사용합니다
+npm start
+```
+
+#### 프로덕션 환경에서 실행
+```bash
+# .env 파일의 설정을 사용합니다
+npm start
+```
+
+## 설치 및 실행
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm start
+```
+
+## 주요 기능
+
+- 영화 상세 정보 조회
+- 리뷰 작성 및 조회
+- 리뷰 공감/비공감
+- 스포일러 표시/숨김
+
+## 기술 스택
+
+- React
+- TypeScript
+- Material-UI
+- React Router
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -31,13 +87,13 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 ### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
 ## Learn More
 

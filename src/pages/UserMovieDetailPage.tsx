@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getUserMovieById, Movie } from '../services/movieService';
+import { getUserMovieById, Movie, getWatchlist, addToWatchlist, removeFromWatchlist } from '../services/movieService';
 import { Container, Box, Typography, Chip, Stack, Button, CircularProgress, Paper, Fade, TextField, Rating } from '@mui/material';
 import { useState as useReactState } from 'react';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import { endpoints, getApiUrl } from '../config/api';
 
 // 리뷰 작성 폼 상태 타입
 interface ReviewForm {
@@ -59,6 +62,9 @@ const UserMovieDetailPage: React.FC = () => {
   const token = localStorage.getItem('token');
   const [reviewReactions, setReviewReactions] = useState<{ [reviewId: string]: { good: number; bad: number } }>({});
   const [myReactions, setMyReactions] = useState<{ [reviewId: string]: 'GOOD' | 'BAD' | 'NONE' }>({});
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [myReviewMovieIds, setMyReviewMovieIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!movieId) return;
@@ -79,9 +85,8 @@ const UserMovieDetailPage: React.FC = () => {
     const fetchReviews = async () => {
       setReviewsLoading(true);
       try {
-        const res = await fetch(`http://review.impati.net/v1/movies/${movieId}/reviews`);
+        const res = await fetch(endpoints.movies.getReviews(movieId!));
         const data = await res.json();
-        // id 필드가 없고 reviewId만 있다면 id: reviewId로 매핑
         const reviewsWithId = data.map((r: any) => ({ ...r, id: r.id || r.reviewId }));
         setReviews(reviewsWithId);
       } catch (e) {
@@ -94,7 +99,7 @@ const UserMovieDetailPage: React.FC = () => {
     // 리뷰별 공감/비공감 수 불러오기
     const fetchReviewReactions = async () => {
       try {
-        const res = await fetch(`http://review.impati.net/v1/movies/${movieId}/review-reaction`);
+        const res = await fetch(endpoints.movies.getReviewReactions(movieId!));
         const data = await res.json();
         const map: { [reviewId: string]: { good: number; bad: number } } = {};
         data.forEach((item: any) => {
@@ -106,7 +111,35 @@ const UserMovieDetailPage: React.FC = () => {
       }
     };
     fetchReviewReactions();
-  }, [movieId, navigate]);
+    // 볼 영화 포함 여부 확인
+    const fetchWatchlist = async () => {
+      if (!token) return;
+      setWatchlistLoading(true);
+      try {
+        const data = await getWatchlist(token);
+        setIsInWatchlist(data.some(item => item.movieId === movieId));
+      } catch {
+        setIsInWatchlist(false);
+      } finally {
+        setWatchlistLoading(false);
+      }
+    };
+    if (token) fetchWatchlist();
+    // 내 리뷰 영화 ID 목록 불러오기
+    const fetchMyReviews = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(`${getApiUrl()}/v1/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setMyReviewMovieIds(data.map((r: any) => r.movieId));
+      } catch {
+        setMyReviewMovieIds([]);
+      }
+    };
+    if (token) fetchMyReviews();
+  }, [movieId, navigate, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -115,7 +148,7 @@ const UserMovieDetailPage: React.FC = () => {
       const result: { [reviewId: string]: 'GOOD' | 'BAD' | 'NONE' } = {};
       await Promise.all(reviews.map(async (review) => {
         try {
-          const res = await fetch(`http://review.impati.net/v1/reviews/${review.id}/reaction`, {
+          const res = await fetch(endpoints.reviews.getReaction(review.id), {
             headers: { 'Authorization': `Bearer ${token}` },
           });
           const data = await res.json();
@@ -148,7 +181,7 @@ const UserMovieDetailPage: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      await fetch(`http://review.impati.net/v1/movies/${movieId}/reviews`, {
+      await fetch(endpoints.movies.createReview(movieId!), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +193,7 @@ const UserMovieDetailPage: React.FC = () => {
       setReviewForm({ title: '', description: '', acting: 0, cinematography: 0, originality: 0, entertainment: 0, story: 0, hasSpoiler: false, rating: 0 });
       setReviewFormOpen(false);
       // 리뷰 목록 새로고침
-      const res = await fetch(`http://review.impati.net/v1/movies/${movieId}/reviews`);
+      const res = await fetch(endpoints.movies.getReviews(movieId!));
       const data = await res.json();
       setReviews(data);
     } catch (e) {
@@ -168,6 +201,17 @@ const UserMovieDetailPage: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddToWatchlist = async () => {
+    if (!token || !movieId) return;
+    await addToWatchlist(movieId, token);
+    setIsInWatchlist(true);
+  };
+  const handleRemoveFromWatchlist = async () => {
+    if (!token || !movieId) return;
+    await removeFromWatchlist(movieId, token);
+    setIsInWatchlist(false);
   };
 
   if (loading) {
@@ -182,9 +226,22 @@ const UserMovieDetailPage: React.FC = () => {
   return (
     <Fade in timeout={500}>
       <Container maxWidth="md" sx={{ mt: 8, mb: 8 }}>
-        <Typography variant="h3" fontWeight={900} gutterBottom sx={{ letterSpacing: -1, color: 'primary.main' }}>
-          {movie.movieName}
-        </Typography>
+        <Box display="flex" alignItems="center" mb={1}>
+          <Typography variant="h3" fontWeight={900} gutterBottom sx={{ letterSpacing: -1, color: 'primary.main', mr: 2 }}>
+            {movie.movieName}
+          </Typography>
+          {token && !watchlistLoading && movieId && !myReviewMovieIds.includes(movieId) && (
+            isInWatchlist ? (
+              <Button variant="outlined" color="error" size="small" startIcon={<RemoveIcon />} sx={{ fontWeight: 700, ml: 1 }} onClick={handleRemoveFromWatchlist}>
+                볼 영화에서 제거
+              </Button>
+            ) : (
+              <Button variant="contained" color="primary" size="small" startIcon={<AddIcon />} sx={{ fontWeight: 700, ml: 1 }} onClick={handleAddToWatchlist}>
+                볼 영화에 추가
+              </Button>
+            )
+          )}
+        </Box>
         <Typography variant="subtitle1" color="text.secondary" mb={3}>
           {movie.detail.open}
         </Typography>
@@ -348,12 +405,12 @@ const UserMovieDetailPage: React.FC = () => {
                 token={token} 
                 onReacted={async (reviewId, type) => {
                   if (!token) return;
-                  await fetch(`http://review.impati.net/v1/reviews/${reviewId}/reaction?reactionType=${type}`, {
+                  await fetch(endpoints.reviews.updateReaction(reviewId, type), {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                   });
                   // 반영 후 다시 불러오기
-                  const res = await fetch(`http://review.impati.net/v1/movies/${movieId}/review-reaction`);
+                  const res = await fetch(endpoints.movies.getReviewReactions(movieId!));
                   const data = await res.json();
                   const map: { [reviewId: string]: { good: number; bad: number } } = {};
                   data.forEach((item: any) => {
@@ -361,7 +418,9 @@ const UserMovieDetailPage: React.FC = () => {
                   });
                   setReviewReactions(map);
                   // 내 반응도 갱신
-                  const res2 = await fetch(`http://review.impati.net/v1/reviews/${reviewId}/reaction`, { headers: { 'Authorization': `Bearer ${token}` } });
+                  const res2 = await fetch(endpoints.reviews.getReaction(reviewId), { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                  });
                   const data2 = await res2.json();
                   setMyReactions(prev => ({ ...prev, [reviewId]: data2.reactionType || 'NONE' }));
                 }}

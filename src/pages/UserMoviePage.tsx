@@ -1,33 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Typography, TextField, Button, CircularProgress, Paper } from '@mui/material';
-import { searchMovies, getUserMovieById, createMovie, Movie, CreateMovieRequest } from '../services/movieService';
+import { searchMovies, getUserMovieById, createMovie, Movie, CreateMovieRequest, getWatchlist, addToWatchlist, removeFromWatchlist } from '../services/movieService';
 import MovieCard from '../components/MovieCard';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
+import { getApiUrl } from '../config/api';
 
 const UserMoviePage: React.FC = () => {
   const [query, setQuery] = useState('');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [myReviewMovieIds, setMyReviewMovieIds] = useState<string[]>([]);
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const isLoggedIn = !!token;
 
-  // 화면 진입 시 자동 검색
+  // 내 리뷰 영화 ID 목록 불러오기
+  useEffect(() => {
+    if (!token) return;
+    const fetchMyReviews = async () => {
+      try {
+        const res = await fetch(`${getApiUrl()}/v1/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setMyReviewMovieIds(data.map((r: any) => r.movieId));
+      } catch {
+        setMyReviewMovieIds([]);
+      }
+    };
+    fetchMyReviews();
+  }, [token]);
+
+  // 화면 진입 시 자동 검색 & watchlist 불러오기
   useEffect(() => {
     handleSearch();
+    if (isLoggedIn) fetchWatchlist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchWatchlist = async () => {
+    setWatchlistLoading(true);
+    try {
+      const data = await getWatchlist(token!);
+      setWatchlist(data.map(item => item.movieId));
+    } catch {
+      setWatchlist([]);
+    } finally {
+      setWatchlistLoading(false);
+    }
+  };
 
   // 검색 실행
   const handleSearch = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await searchMovies(query);
       setMovies(data);
     } catch (e) {
-      alert('영화 검색에 실패했습니다.');
+      setMovies([]);
+      setError('검색 결과가 없습니다.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 볼 영화 추가
+  const handleAddToWatchlist = async (movieId: string) => {
+    if (!token) return;
+    await addToWatchlist(movieId, token);
+    fetchWatchlist();
+  };
+  // 볼 영화 제거
+  const handleRemoveFromWatchlist = async (movieId: string) => {
+    if (!token) return;
+    await removeFromWatchlist(movieId, token);
+    fetchWatchlist();
   };
 
   // 영화 선택 시 상세 페이지로 이동
@@ -37,7 +88,6 @@ const UserMoviePage: React.FC = () => {
 
   return (
     <>
-      <Header />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
         <Box 
           sx={{ 
@@ -121,6 +171,10 @@ const UserMoviePage: React.FC = () => {
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
             <CircularProgress sx={{ color: 'primary.main' }} />
           </Box>
+        ) : error || movies.length === 0 ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+            <Typography color="text.secondary" fontSize={20}>{error || '검색 결과가 없습니다.'}</Typography>
+          </Box>
         ) : (
           <Box 
             display="grid" 
@@ -156,7 +210,15 @@ const UserMoviePage: React.FC = () => {
                   backdropFilter: 'blur(10px)',
                 }}
               >
-                <MovieCard movie={movie} onClick={() => handleSelectMovie(movie)} />
+                <MovieCard 
+                  movie={movie} 
+                  onClick={() => handleSelectMovie(movie)}
+                  isInWatchlist={watchlist.includes(movie.movieId)}
+                  isLoggedIn={isLoggedIn}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                  isReviewedByMe={myReviewMovieIds.includes(movie.movieId)}
+                />
               </Paper>
             ))}
           </Box>
