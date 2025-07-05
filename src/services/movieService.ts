@@ -28,10 +28,29 @@ export interface CreateMovieRequest {
   detail: MovieDetail;
 }
 
-// 사용자용 영화 검색 API (movieName 쿼리, 없으면 전체)
-export const searchMovies = async (movieName?: string): Promise<Movie[]> => {
+// 페이징을 지원하는 영화 검색 API
+export interface MovieSearchParams {
+  movieName?: string;
+  offsetId?: string;
+  fetchSize?: number;
+}
+
+// 사용자용 영화 검색 API (movieName 쿼리, 없으면 전체) - 페이징 지원
+export const searchMovies = async (params?: MovieSearchParams): Promise<Movie[]> => {
+  const searchParams: any = {};
+  
+  if (params?.movieName) {
+    searchParams.movieName = params.movieName;
+  }
+  if (params?.offsetId) {
+    searchParams.offsetId = params.offsetId;
+  }
+  if (params?.fetchSize) {
+    searchParams.fetchSize = params.fetchSize;
+  }
+  
   const response = await axios.get(`${API_URL}/v1/api/movies`, {
-    params: movieName ? { movieName } : {},
+    params: searchParams,
   });
   return response.data;
 };
