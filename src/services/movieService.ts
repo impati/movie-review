@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getApiUrl } from '../config/api';
+import { isTokenExpired, handleTokenExpiration } from '../utils/auth';
 
 const API_URL = getApiUrl();
 
@@ -87,22 +88,43 @@ export const uploadImage = async (file: File): Promise<string> => {
 
 // 볼 영화 추가
 export const addToWatchlist = async (movieId: string, token: string) => {
-  await axios.post(`${getApiUrl()}/v1/watchlist/movies/${movieId}`, {}, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  try {
+    await axios.post(`${getApiUrl()}/v1/watchlist/movies/${movieId}`, {}, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  } catch (error: any) {
+    if (isTokenExpired(error)) {
+      handleTokenExpiration();
+    }
+    throw error;
+  }
 };
 
 // 볼 영화 제거
 export const removeFromWatchlist = async (movieId: string, token: string) => {
-  await axios.delete(`${getApiUrl()}/v1/watchlist/movies/${movieId}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  try {
+    await axios.delete(`${getApiUrl()}/v1/watchlist/movies/${movieId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  } catch (error: any) {
+    if (isTokenExpired(error)) {
+      handleTokenExpiration();
+    }
+    throw error;
+  }
 };
 
 // 내 볼 영화 목록 조회
 export const getWatchlist = async (token: string): Promise<{ movieId: string }[]> => {
-  const res = await axios.get(`${getApiUrl()}/v1/watchlist`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  return res.data;
+  try {
+    const res = await axios.get(`${getApiUrl()}/v1/watchlist`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    return res.data;
+  } catch (error: any) {
+    if (isTokenExpired(error)) {
+      handleTokenExpiration();
+    }
+    throw error;
+  }
 }; 

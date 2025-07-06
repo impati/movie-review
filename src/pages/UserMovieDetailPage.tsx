@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUserMovieById, Movie, getWatchlist, addToWatchlist, removeFromWatchlist } from '../services/movieService';
+import { isTokenExpired } from '../utils/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { Container, Box, Typography, Chip, Stack, Button, CircularProgress, Paper, Fade, TextField, Rating } from '@mui/material';
 import { useState as useReactState } from 'react';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -43,6 +45,7 @@ const UserMovieDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
+  const { handleTokenExpiration } = useAuth();
   const [reviewForm, setReviewForm] = useState<ReviewForm>({
     title: '',
     description: '',
@@ -118,8 +121,12 @@ const UserMovieDetailPage: React.FC = () => {
       try {
         const data = await getWatchlist(token);
         setIsInWatchlist(data.some(item => item.movieId === movieId));
-      } catch {
-        setIsInWatchlist(false);
+      } catch (error: any) {
+        if (isTokenExpired(error)) {
+          handleTokenExpiration();
+        } else {
+          setIsInWatchlist(false);
+        }
       } finally {
         setWatchlistLoading(false);
       }
@@ -134,8 +141,12 @@ const UserMovieDetailPage: React.FC = () => {
         });
         const data = await res.json();
         setMyReviewMovieIds(data.map((r: any) => r.movieId));
-      } catch {
-        setMyReviewMovieIds([]);
+      } catch (error: any) {
+        if (isTokenExpired(error)) {
+          handleTokenExpiration();
+        } else {
+          setMyReviewMovieIds([]);
+        }
       }
     };
     if (token) fetchMyReviews();
@@ -176,7 +187,7 @@ const UserMovieDetailPage: React.FC = () => {
   };
   const handleSubmitReview = async () => {
     if (!token) {
-      alert('로그인 후 리뷰를 작성할 수 있습니다.');
+      handleTokenExpiration();
       return;
     }
     setSubmitting(true);
@@ -205,13 +216,25 @@ const UserMovieDetailPage: React.FC = () => {
 
   const handleAddToWatchlist = async () => {
     if (!token || !movieId) return;
-    await addToWatchlist(movieId, token);
-    setIsInWatchlist(true);
+    try {
+      await addToWatchlist(movieId, token);
+      setIsInWatchlist(true);
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      }
+    }
   };
   const handleRemoveFromWatchlist = async () => {
     if (!token || !movieId) return;
-    await removeFromWatchlist(movieId, token);
-    setIsInWatchlist(false);
+    try {
+      await removeFromWatchlist(movieId, token);
+      setIsInWatchlist(false);
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      }
+    }
   };
 
   if (loading) {

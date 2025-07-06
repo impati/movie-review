@@ -4,6 +4,8 @@ import { searchMovies, Movie, getWatchlist, addToWatchlist, removeFromWatchlist 
 import MovieCard from '../components/MovieCard';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../config/api';
+import { isTokenExpired } from '../utils/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const UserMoviePage: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -12,12 +14,13 @@ const UserMoviePage: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
-
+ 
   const [myReviewMovieIds, setMyReviewMovieIds] = useState<string[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const isLoggedIn = !!token;
+  const { handleTokenExpiration } = useAuth();
 
   // 내 리뷰 영화 ID 목록 불러오기
   useEffect(() => {
@@ -29,8 +32,12 @@ const UserMoviePage: React.FC = () => {
         });
         const data = await res.json();
         setMyReviewMovieIds(data.map((r: any) => r.movieId));
-      } catch {
-        setMyReviewMovieIds([]);
+      } catch (error: any) {
+        if (isTokenExpired(error)) {
+          handleTokenExpiration();
+        } else {
+          setMyReviewMovieIds([]);
+        }
       }
     };
     fetchMyReviews();
@@ -47,8 +54,12 @@ const UserMoviePage: React.FC = () => {
     try {
       const data = await getWatchlist(token!);
       setWatchlist(data.map(item => item.movieId));
-    } catch {
-      setWatchlist([]);
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      } else {
+        setWatchlist([]);
+      }
     }
   };
 
@@ -104,14 +115,26 @@ const UserMoviePage: React.FC = () => {
   // 볼 영화 추가
   const handleAddToWatchlist = async (movieId: string) => {
     if (!token) return;
-    await addToWatchlist(movieId, token);
-    fetchWatchlist();
+    try {
+      await addToWatchlist(movieId, token);
+      fetchWatchlist();
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      }
+    }
   };
   // 볼 영화 제거
   const handleRemoveFromWatchlist = async (movieId: string) => {
     if (!token) return;
-    await removeFromWatchlist(movieId, token);
-    fetchWatchlist();
+    try {
+      await removeFromWatchlist(movieId, token);
+      fetchWatchlist();
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      }
+    }
   };
 
   // 영화 선택 시 상세 페이지로 이동

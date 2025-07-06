@@ -3,6 +3,8 @@ import { Container, Typography, Box, Card, CardMedia, CardContent, Rating, Circu
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../config/api';
 import { getWatchlist, getMovieById, removeFromWatchlist, Movie } from '../services/movieService';
+import { isTokenExpired } from '../utils/auth';
+import { useAuth } from '../contexts/AuthContext';
 import MovieCard from '../components/MovieCard';
 
 interface MyReview {
@@ -29,11 +31,11 @@ const MyPage: React.FC = () => {
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
+  const { handleTokenExpiration } = useAuth();
 
   useEffect(() => {
     if (!token) {
-      alert('로그인 후 이용 가능합니다.');
-      navigate('/');
+      handleTokenExpiration();
       return;
     }
     const fetchReviews = async () => {
@@ -45,8 +47,12 @@ const MyPage: React.FC = () => {
         });
         const data = await res.json();
         setReviews(data);
-      } catch (e) {
-        setReviews([]);
+      } catch (error: any) {
+        if (isTokenExpired(error)) {
+          handleTokenExpiration();
+        } else {
+          setReviews([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -67,8 +73,12 @@ const MyPage: React.FC = () => {
         }
       }));
       setWatchlist(movies.filter(Boolean) as Movie[]);
-    } catch {
-      setWatchlist([]);
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      } else {
+        setWatchlist([]);
+      }
     } finally {
       setWatchlistLoading(false);
     }
@@ -76,8 +86,14 @@ const MyPage: React.FC = () => {
 
   const handleRemoveFromWatchlist = async (movieId: string) => {
     if (!token) return;
-    await removeFromWatchlist(movieId, token);
-    fetchWatchlist();
+    try {
+      await removeFromWatchlist(movieId, token);
+      fetchWatchlist();
+    } catch (error: any) {
+      if (isTokenExpired(error)) {
+        handleTokenExpiration();
+      }
+    }
   };
 
   return (
